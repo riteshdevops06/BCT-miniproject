@@ -4,7 +4,8 @@
 let provider, signer, contract, account;
 let config, abi;
 let campaignCache = [];
-const ADMIN_ADDR = ""; // filled from config.json
+let localAccounts = []; // local test accounts (no-MetaMask mode)
+let isLocalMode = false;
 
 // ---------------------------------------------------------------- helpers
 const $ = (id) => document.getElementById(id);
@@ -40,9 +41,11 @@ async function init() {
   // Fall back to injected wallet (MetaMask) if present, else local hardhat node.
   if (window.ethereum) {
     provider = new ethers.BrowserProvider(window.ethereum);
+    isLocalMode = false;
     $("netBadge").textContent = "MetaMask";
   } else {
     provider = new ethers.JsonRpcProvider(config.rpcUrl);
+    isLocalMode = true;
     $("netBadge").textContent = "Local RPC";
   }
 
@@ -59,31 +62,79 @@ async function connect() {
       await window.ethereum.request({ method: "eth_requestAccounts" });
       signer = await provider.getSigner();
     } else {
-      // Local node: use the first hardhat account as a stand-in for MetaMask.
+      // Local node: use one of the hardhat accounts as a stand-in for MetaMask.
       // NOTE: ethers v6 listAccounts() returns Account objects, not address
       // strings, so use eth_accounts directly for plain addresses.
-      const accounts = await provider.send("eth_accounts", []);
-      if (!accounts || !accounts.length) {
+      localAccounts = await provider.send("eth_accounts", []);
+      if (!localAccounts || !localAccounts.length) {
         throw new Error("No accounts available on the local node.");
       }
-      signer = await provider.getSigner(accounts[0]);
+      const saved = localStorage.getItem("givetrace.acct");
+      const idx = saved !== null && localAccounts[saved] ? saved : 0;
+      signer = await provider.getSigner(localAccounts[idx]);
     }
-    account = await signer.getAddress();
-    contract = contract.connect(signer);
-    $("netBadge").textContent = short(account);
-    $("connectBtn").textContent = "Disconnect";
-    $("connectBtn").onclick = disconnect;
-
-    // Role-based tabs
-    const isAdmin = account.toLowerCase() === config.admin.toLowerCase();
-    $("adminTab").classList.toggle("hidden", !isAdmin);
-    $("createTab").classList.toggle("hidden", !(await contract.isCharityOrg(account)));
-
-    await refresh();
-    toast("Wallet connected: " + short(account));
+    await onAccountReady();
   } catch (e) {
     toast(e.message || "Connection failed", true);
   }
+}
+
+/** Shared setup once a signer is available: badge, role tabs, account switcher. */
+async function onAccountReady() {
+  account = await signer.getAddress();
+  contract = contract.connect(signer);
+
+  const isAdmin = account.toLowerCase() === config.admin.toLowerCase();
+  const isOrg = await contract.isCharityOrg(account);
+
+  $("netBadge").textContent = short(account);
+  $("netBadge").className = "pill " + (isAdmin ? "Approved" : isOrg ? "Executed" : "Pending");
+  $("connectBtn").textContent = "Disconnect";
+  $("connectBtn").onclick = disconnect;
+
+  // Role-based tabs
+  $("adminTab").classList.toggle("hidden", !isAdmin);
+  $("createTab").classList.toggle("hidden", !isOrg);
+
+  if (isLocalMode) buildAccountSwitcher();
+
+  await refresh();
+  toast(
+    `Connected as ${roleLabel(account)}${isAdmin ? " (admin)" : isOrg ? " (charity org)" : ""}`
+  );
+}
+
+/** Short role description for an address, used in the account dropdown. */
+function roleLabel(addr) {
+  const a = addr.toLowerCase();
+  if (a === config.admin.toLowerCase()) return "Admin";
+  if ((config.charityOrgs || []).some((o) => o.toLowerCase() === a)) return "Charity Org";
+  return "Donor";
+}
+
+/**
+ * In local (no-MetaMask) mode, let the user act as any of the test accounts.
+ * This is what makes the role separation visible in a live demo.
+ */
+function buildAccountSwitcher() {
+  const sel = $("acctSel");
+  sel.classList.remove("hidden");
+  sel.innerHTML = localAccounts
+    .map((a, i) => `<option value="${i}">${short(a)} — ${roleLabel(a)}</option>`)
+    .join("");
+  const saved = localStorage.getItem("givetrace.acct");
+  sel.value = saved !== null && localAccounts[saved] ? saved : 0;
+  sel.className = "role-" + (roleLabel(account) === "Admin" ? "admin" : roleLabel(account) === "Charity Org" ? "org" : "other");
+
+  sel.onchange = async () => {
+    try {
+      localStorage.setItem("givetrace.acct", sel.value);
+      signer = await provider.getSigner(localAccounts[sel.value]);
+      await onAccountReady();
+    } catch (e) {
+      toast(e.shortMessage || e.message, true);
+    }
+  };
 }
 
 function disconnect() {
@@ -93,6 +144,8 @@ function disconnect() {
   $("connectBtn").textContent = "Connect Wallet";
   $("connectBtn").onclick = connect;
   $("netBadge").textContent = window.ethereum ? "MetaMask" : "Local RPC";
+  $("netBadge").className = "pill Pending";
+  $("acctSel").classList.add("hidden");
   $("adminTab").classList.add("hidden");
   $("createTab").classList.add("hidden");
   refresh();
@@ -267,7 +320,7 @@ async function renderRequests() {
                 <button class="danger reject-r" data-id="${i}">Reject</button>`;
     } else if (Number(r.status) === 1 && isRequester) {
       action = `<button class="secondary proof-r" data-id="${i}">Attach Proof</button>`;
-    } else if (Number(r.status) === 2 && isRequester) {
+    } else if (Number(r.status) === 2 && (isRequester || isAdmin)) {
       action = `<button class="blue exec-r" data-id="${i}" data-camp="${r.campaignId}">Execute</button>`;
     }
 

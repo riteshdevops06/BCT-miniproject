@@ -93,13 +93,29 @@ BCT Miniproject/
 - Node.js 18+ (developed on v22)
 - Optional: [MetaMask](https://metamask.io) browser extension
 
-### Step 1 — Install
+### Quick start (one command)
+
+```bash
+npm install     # first time only
+npm start
+```
+
+`npm start` frees the ports, starts a local blockchain, compiles and deploys the
+contract, seeds two demo campaigns, serves the frontend, and opens your browser at
+**http://localhost:3000**. Press **Ctrl+C** to stop everything.
+
+> **For an exam or demo**, see **[DEMO_SCRIPT.md](DEMO_SCRIPT.md)** — a full
+> click-through with the words to say, plus examiner Q&A prep.
+
+### Manual start (three terminals)
+
+**Step 1 — Install**
 
 ```bash
 npm install
 ```
 
-### Step 2 — Start the local blockchain
+**Step 2 — Start the local blockchain**
 
 ```bash
 npm run node
@@ -108,7 +124,7 @@ npm run node
 Leave this running. It prints 20 test accounts, each funded with 10000 ETH.
 It also prints the **admin address** (`0xf39F...2266`) — that's the platform admin.
 
-### Step 3 — Deploy the contract
+**Step 3 — Deploy the contract**
 
 In a **second terminal**:
 
@@ -119,7 +135,7 @@ npm run deploy
 This deploys the contract, registers two demo charity organisations, seeds two demo
 campaigns, and writes `frontend/abi.json` + `frontend/config.json`.
 
-### Step 4 — Start the frontend
+**Step 4 — Start the frontend**
 
 In a **third terminal**:
 
@@ -133,10 +149,13 @@ Open **http://localhost:3000**
 
 Click **Connect Wallet**.
 
-- **With MetaMask**: import one of the accounts printed by `npm run node` into MetaMask
-  (private key shown in the terminal), then switch MetaMask to `http://127.0.0.1:8545`
-  (Local Network). Note the contract address in `frontend/config.json`.
-- **Without MetaMask**: the app falls back to the first local-node account automatically.
+- **Without MetaMask** (simplest): the app connects to the local node and shows an
+  **"Acting as"** dropdown listing the test accounts with their roles
+  (Admin / Charity Org / Donor). Switch between them to demonstrate that different
+  roles have different powers.
+- **With MetaMask**: import one of the accounts from `demo-node.log` into MetaMask,
+  then switch MetaMask to `http://127.0.0.1:8545` (Local Network). Note the contract
+  address in `frontend/config.json`.
 
 ---
 
@@ -175,15 +194,21 @@ It performs, on the live local chain:
 ## 8. Testing
 
 ```bash
-npm test              # 28 unit tests
-npm run verify:ui     # 25 headless UI render + interaction checks
-npm run verify:ethers # ethers v6 result-handling assumptions
+npm test                # 28 unit tests
+npm run verify:ui       # 25 headless UI render + interaction checks
+npm run verify:demo     # 21 checks replaying the exact DEMO_SCRIPT.md walkthrough
+npm run verify:ethers   # ethers v6 result-handling assumptions
 ```
 
 All 28 contract tests pass. The UI suite loads `frontend/index.html` in a headless DOM
 against the live node and asserts that campaigns, ledger rows, withdrawal requests and
 milestones actually render — then connects a wallet and donates through the real UI
 buttons, confirming the ledger and stats update.
+
+`verify:demo` replays the examiner walkthrough end to end: connect → donate as a
+donor → request a withdrawal as a charity org → **confirm the contract blocks
+execution before approval** → approve as admin → execute → confirm the public ledger
+shows the payout with its proof link.
 
 ---
 

@@ -4,6 +4,7 @@
   "description": "Blockchain based transparent charity dApp - BCT mini project",
   "private": true,
   "scripts": {
+    "start": "node scripts/start-demo.js",
     "compile": "hardhat compile",
     "node": "hardhat node",
     "deploy": "hardhat run scripts/deploy.js --network localhost",
@@ -12,6 +13,7 @@
     "demo": "hardhat run scripts/demo.js --network localhost",
     "test": "hardhat test",
     "verify:ui": "node scripts/verify-ui.js",
+    "verify:demo": "node scripts/verify-demo-flow.js",
     "verify:ethers": "hardhat run scripts/verify-frontend.js --network localhost"
   },
   "devDependencies": {

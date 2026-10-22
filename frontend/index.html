@@ -91,6 +91,8 @@
   }
   .toast.err { border-left-color: var(--danger); }
   .muted { color: var(--muted); }
+  select.role-admin { border-color: #3b5a8c; }
+  select.role-org { border-color: #2f6b45; }
   .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 640px) { .two { grid-template-columns: 1fr; } }
@@ -107,6 +109,7 @@
       </div>
       <div class="flex">
         <span id="netBadge" class="pill Pending">no wallet</span>
+        <select id="acctSel" class="hidden" style="width:auto;min-width:230px" title="Local test accounts"></select>
         <button id="connectBtn">Connect Wallet</button>
       </div>
     </div>

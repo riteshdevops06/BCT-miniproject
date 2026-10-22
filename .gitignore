@@ -6,4 +6,5 @@ coverage/
 coverage.json
 .env
 *.log
+demo-node.log
 .DS_Store
