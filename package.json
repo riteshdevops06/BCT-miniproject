@@ -1,0 +1,22 @@
+{
+  "name": "bct-charity-miniproject",
+  "version": "1.0.0",
+  "description": "Blockchain based transparent charity dApp - BCT mini project",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "node": "hardhat node",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:local": "hardhat run scripts/deploy.js",
+    "serve": "node scripts/serve.js",
+    "demo": "hardhat run scripts/demo.js --network localhost",
+    "test": "hardhat test",
+    "verify:ui": "node scripts/verify-ui.js",
+    "verify:ethers": "hardhat run scripts/verify-frontend.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.10",
+    "jsdom": "^25.0.1"
+  }
+}

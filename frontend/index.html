@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GiveTrace — Transparent Charity</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --card: #171d2c;
+    --card2: #1e2536;
+    --line: #2a3347;
+    --text: #e8ecf5;
+    --muted: #8b96ad;
+    --accent: #4ade80;
+    --accent2: #38bdf8;
+    --warn: #fbbf24;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #16233a, #0f1420);
+    border-bottom: 1px solid var(--line);
+    padding: 22px 0;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+  .hrow { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 26px; letter-spacing: -.5px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 14px; }
+  button {
+    background: var(--accent); color: #06210f; border: 0; padding: 10px 18px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.secondary { background: var(--card2); color: var(--text); border: 1px solid var(--line); }
+  button.blue { background: var(--accent2); color: #04202e; }
+  button.danger { background: var(--danger); color: #2b0808; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  nav { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+  nav button { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  nav button.active { background: var(--accent); color: #06210f; border-color: var(--accent); }
+  main { padding: 26px 0 60px; }
+  .hidden { display: none !important; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .stat .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+  .stat .v { font-size: 22px; font-weight: 700; margin-top: 4px; word-break: break-all; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .card h3 { font-size: 17px; margin-bottom: 4px; }
+  .tag { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--card2); color: var(--accent2); border: 1px solid var(--line); margin-bottom: 8px; }
+  .tag.active { color: var(--accent); }
+  .tag.completed { color: var(--accent2); }
+  .tag.cancelled { color: var(--danger); }
+  .desc { color: var(--muted); font-size: 13.5px; margin: 8px 0 14px; }
+  .bar { height: 9px; background: var(--card2); border-radius: 99px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  input, textarea, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 5px; }
+  .form { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; }
+  .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+  .pill { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 600; }
+  .pill.Pending { background: #3a2f12; color: var(--warn); }
+  .pill.Approved { background: #12303a; color: var(--accent2); }
+  .pill.Executed { background: #10331f; color: var(--accent); }
+  .pill.Rejected { background: #3a1616; color: var(--danger); }
+  .pill.None { background: #232b3c; color: var(--muted); }
+  a { color: var(--accent2); }
+  .note { background: #1c2740; border-left: 3px solid var(--accent2); padding: 11px 14px; border-radius: 6px; font-size: 13.5px; margin-bottom: 18px; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+  .toast {
+    position: fixed; right: 18px; bottom: 18px; background: var(--card2);
+    border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 8px; font-size: 13.5px; max-width: 340px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.45); z-index: 99;
+  }
+  .toast.err { border-left-color: var(--danger); }
+  .muted { color: var(--muted); }
+  .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hrow">
+      <div>
+        <h1>Give<span>Trace</span></h1>
+        <div class="sub">Blockchain based transparent charity &mdash; every donation and every rupee spent, on the public ledger.</div>
+      </div>
+      <div class="flex">
+        <span id="netBadge" class="pill Pending">no wallet</span>
+        <button id="connectBtn">Connect Wallet</button>
+      </div>
+    </div>
+    <nav>
+      <button data-tab="campaigns" class="active">Campaigns</button>
+      <button data-tab="donate">Donate</button>
+      <button data-tab="ledger">Public Ledger</button>
+      <button data-tab="requests">Withdrawals</button>
+      <button data-tab="milestones">Milestones</button>
+      <button data-tab="create" class="hidden" id="createTab">Create Campaign</button>
+      <button data-tab="admin" class="hidden" id="adminTab">Admin</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <!-- CAMPAIGNS -->
+  <section id="tab-campaigns">
+    <div class="note">
+      Donations are recorded permanently on the blockchain. A charity can only move money out
+      after an <b>admin approves the withdrawal</b> and a <b>public proof link</b> (bill / receipt /
+      photo) is attached &mdash; so donors can always verify where their money went.
+    </div>
+    <div class="grid" id="campaignGrid"></div>
+    <div id="campaignEmpty" class="empty hidden">No campaigns yet.</div>
+  </section>
+
+  <!-- DONATE -->
+  <section id="tab-donate" class="hidden">
+    <div class="form" style="max-width:640px">
+      <h3>Make a Donation</h3>
+      <label for="dCampaign">Select campaign</label>
+      <select id="dCampaign"></select>
+      <label for="dAmount">Amount (ETH)</label>
+      <input id="dAmount" type="number" step="0.01" min="0.01" value="0.1" />
+      <label for="dMessage">Your message (optional)</label>
+      <input id="dMessage" type="text" placeholder="Wishing you well..." />
+      <div class="actions"><button id="donateBtn">Donate Now</button></div>
+      <p class="muted" style="font-size:12.5px;margin-top:10px">
+        Donations are non-refundable unless the charity cancels the campaign, in which case you may reclaim your money.
+      </p>
+    </div>
+  </section>
+
+  <!-- LEDGER -->
+  <section id="tab-ledger" class="hidden">
+    <div class="note">
+      This is the full public record of money. Anyone can verify these transactions on the blockchain &mdash;
+      nobody, including the charity, can edit or hide them.
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:12px">All Donations</h3>
+      <div style="overflow-x:auto">
+        <table id="donationTable">
+          <thead><tr><th>#</th><th>Campaign</th><th>Donor</th><th>Amount</th><th>Message</th><th>Time</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="ledgerEmpty" class="empty hidden">No donations recorded yet.</div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">Money Out (Approved + Executed Withdrawals)</h3>
+      <div style="overflow-x:auto">
+        <table id="withdrawTable">
+          <thead><tr><th>#</th><th>Campaign</th><th>Beneficiary</th><th>Amount</th><th>Reason</th><th>Proof</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="withdrawEmpty" class="empty hidden">No money has left the escrow yet.</div>
+    </div>
+  </section>
+
+  <!-- REQUESTS -->
+  <section id="tab-requests" class="hidden">
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:12px">Request a Withdrawal (Charity Org)</h3>
+      <div class="two">
+        <div>
+          <label for="rCampaign">Campaign</label>
+          <select id="rCampaign"></select>
+          <label for="rAmount">Amount (ETH)</label>
+          <input id="rAmount" type="number" step="0.01" min="0.01" placeholder="0.00" />
+        </div>
+        <div>
+          <label for="rReason">Reason for the spend</label>
+          <input id="rReason" type="text" placeholder="Purchased 500 food packets" />
+          <label for="rProof">Proof URL (bill / receipt / photo)</label>
+          <input id="rProof" type="text" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="actions"><button id="requestBtn" class="blue">Submit Request</button></div>
+      <p class="muted" style="font-size:12.5px;margin-top:10px">
+        Funds stay locked in escrow until an admin approves the request and a proof link is present.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px">All Withdrawal Requests</h3>
+      <div style="overflow-x:auto">
+        <table id="requestTable">
+          <thead><tr><th>#</th><th>Campaign</th><th>Amount</th><th>Reason</th><th>Proof</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="requestEmpty" class="empty hidden">No withdrawal requests yet.</div>
+    </div>
+  </section>
+
+  <!-- MILESTONES -->
+  <section id="tab-milestones" class="hidden">
+    <div class="note">
+      Progress updates published by the charity with evidence links &mdash; so donors can confirm
+      the work actually happened, not just read a claim.
+    </div>
+    <div class="form" style="max-width:640px">
+      <h3>Post a Milestone</h3>
+      <label for="mCampaign">Campaign</label>
+      <select id="mCampaign"></select>
+      <label for="mDesc">What was achieved</label>
+      <input id="mDesc" type="text" placeholder="Distributed 200 food packets in Ward 5" />
+      <label for="mProof">Evidence link (photo / receipt)</label>
+      <input id="mProof" type="text" placeholder="https://..." />
+      <div class="actions"><button id="milestoneBtn" class="blue">Post Milestone</button></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">Progress Log</h3>
+      <div id="milestoneList"></div>
+      <div id="milestoneEmpty" class="empty hidden">No milestones posted yet.</div>
+    </div>
+  </section>
+
+  <!-- CREATE -->
+  <section id="tab-create" class="hidden">
+    <div class="form" style="max-width:640px">
+      <h3>Create a Campaign</h3>
+      <p class="muted" style="font-size:13px">Only registered charity organisations can create campaigns.</p>
+      <label for="cTitle">Title</label>
+      <input id="cTitle" type="text" placeholder="Winter Blanket Drive" />
+      <label for="cCause">Cause</label>
+      <input id="cCause" type="text" placeholder="Health / Education / Disaster Relief" />
+      <label for="cDesc">Description</label>
+      <textarea id="cDesc" rows="3" placeholder="Describe what the funds will be used for..."></textarea>
+      <div class="two">
+        <div>
+          <label for="cGoal">Goal (ETH)</label>
+          <input id="cGoal" type="number" step="0.1" min="0.1" placeholder="5" />
+        </div>
+        <div>
+          <label for="cBen">Beneficiary address</label>
+          <input id="cBen" type="text" placeholder="0x..." />
+        </div>
+      </div>
+      <div class="actions"><button id="createBtn">Create Campaign</button></div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="tab-admin" class="hidden">
+    <div class="note">
+      Admin powers: approve or reject withdrawal requests, register / remove charity organisations,
+      pause the platform. Approvals are what actually release money from escrow.
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:12px">Register a Charity Organisation</h3>
+      <div class="flex">
+        <input id="orgAddr" type="text" placeholder="0x... wallet address" style="flex:1;min-width:240px" />
+        <button id="addOrgBtn" class="blue">Register</button>
+        <button id="removeOrgBtn" class="secondary">Remove</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <h3 style="margin-bottom:12px">Registered Organisations</h3>
+      <div id="orgList" class="mono"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">Pending Requests Awaiting Decision</h3>
+      <div id="adminPending"></div>
+      <div id="adminEmpty" class="empty hidden">Nothing pending right now.</div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
